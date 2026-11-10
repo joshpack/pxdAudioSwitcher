@@ -57,11 +57,13 @@ It was written from scratch and shares no code with other audio switchers.
 ## Install (Windows)
 
 1. Install the **[.NET 10 Runtime](https://dotnet.microsoft.com/download/dotnet/10.0)** (x64) if you don't have it. The plain ".NET Runtime" is enough; the ".NET Desktop Runtime" includes it, so that works too.
-2. Download **`pxdAudioSwitcher-1.4.0-win-x64.zip`** from **[the latest release](https://github.com/joshpack/pxdAudioSwitcher/releases/latest)** (and `pxdAudioSwitcher-1.4.0-win-x64.zip.sha256` if you want to check it: `Get-FileHash pxdAudioSwitcher-1.4.0-win-x64.zip` in PowerShell).
+2. Download **`pxdAudioSwitcher-1.4.1-win-x64.zip`** from **[the latest release](https://github.com/joshpack/pxdAudioSwitcher/releases/latest)** (and `pxdAudioSwitcher-1.4.1-win-x64.zip.sha256` if you want to check it: `Get-FileHash pxdAudioSwitcher-1.4.1-win-x64.zip` in PowerShell).
 3. Unzip it somewhere permanent, for example into `%USERPROFILE%\Apps` (the zip holds a `pxdAudioSwitcher` folder).
 4. Run `pxdAudioSwitcher.exe`. It doesn't need administrator rights.
 
 The exe isn't code-signed, so SmartScreen may warn the first time: choose **More info → Run anyway**.
+
+**Updates:** each time the app starts it checks for a newer release (4 seconds at most, skipped when offline) and, if there is one, updates its own folder and starts again. Command-line actions such as `--next-playback` never wait for this. Set `PXD_NO_UPDATE=1` to turn it off.
 
 ## First run
 

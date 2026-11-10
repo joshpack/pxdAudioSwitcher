@@ -120,6 +120,77 @@ internal static class SelfTest
     }
 
     /// <summary>
+    /// Updating before start (pxdUpdate): skipped for --self-test and bin\ builds; a made-up newer release on a local
+    /// server updates a copy in DIR\update (never the real install).
+    /// </summary>
+    public static void Update(StringBuilder r)
+    {
+        Check(r, "update: skipped for --self-test", !pxdUpdate.BeforeStart(Program.UpdateRepo, Program.UpdateAsset, ["--self-test", Dir!]));
+        if (Path.GetDirectoryName(Environment.ProcessPath ?? "")?.Contains(@"\bin\", StringComparison.OrdinalIgnoreCase) == true)
+            Check(r, "update: skipped for a bin\\ build", !pxdUpdate.BeforeStart(Program.UpdateRepo, Program.UpdateAsset, []));
+
+        const string exe = TrayLink.AppId + ".exe";
+        var root = Path.Combine(Dir!, "update");
+        if (Directory.Exists(root))
+            Directory.Delete(root, recursive: true);
+        var pkg = Path.Combine(root, "pkg", TrayLink.AppId);
+        var app = Path.Combine(root, "app");
+        Directory.CreateDirectory(pkg);
+        Directory.CreateDirectory(app);
+        File.WriteAllText(Path.Combine(pkg, exe), "new exe");
+        File.WriteAllText(Path.Combine(pkg, "app.dll"), "new dll");
+        File.WriteAllText(Path.Combine(app, exe), "old exe");
+        File.WriteAllText(Path.Combine(app, "app.dll"), "old dll");
+        var zipName = TrayLink.AppId + "-99.0.0-win-x64.zip";
+        var zip = Path.Combine(root, zipName);
+        System.IO.Compression.ZipFile.CreateFromDirectory(Path.Combine(root, "pkg"), zip);
+        var hash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(zip))).ToLowerInvariant();
+
+        var prefix = $"http://127.0.0.1:{Random.Shared.Next(41000, 49000)}/";
+        using var listener = new System.Net.HttpListener();
+        listener.Prefixes.Add(prefix);
+        listener.Start();
+        _ = Task.Run(async () =>
+        {
+            while (listener.IsListening)
+            {
+                System.Net.HttpListenerContext ctx;
+                try { ctx = await listener.GetContextAsync(); } catch { return; }
+                byte[] body = ctx.Request.Url!.AbsolutePath switch
+                {
+                    "/repos/" + Program.UpdateRepo + "/releases/latest" => Encoding.UTF8.GetBytes(
+                        $$"""{"tag_name":"v99.0.0","assets":[{"name":"{{zipName}}","browser_download_url":"{{prefix}}zip"},{"name":"{{zipName}}.sha256","browser_download_url":"{{prefix}}sum"}]}"""),
+                    "/zip" => File.ReadAllBytes(zip),
+                    "/sum" => Encoding.ASCII.GetBytes(hash + "  " + zipName),
+                    _ => [],
+                };
+                ctx.Response.StatusCode = body.Length == 0 ? 404 : 200;
+                try { ctx.Response.OutputStream.Write(body); ctx.Response.Close(); } catch { /* client gone */ }
+            }
+        });
+
+        var before = Environment.GetEnvironmentVariable("PXD_UPDATE_API");
+        Environment.SetEnvironmentVariable("PXD_UPDATE_API", prefix.TrimEnd('/'));
+        try
+        {
+            // Off the UI thread: the self-test runs on it, and awaiting there would deadlock.
+            var plan = Task.Run(() => pxdUpdate.FindUpdateAsync(Program.UpdateRepo, Program.UpdateAsset, pxdUpdate.ThisVersion())).GetAwaiter().GetResult();
+            Check(r, "update: newer release found (zip + checksum)", plan is { Sum: not null });
+            Check(r, "update: nothing when this copy is current",
+                Task.Run(() => pxdUpdate.FindUpdateAsync(Program.UpdateRepo, Program.UpdateAsset, new Version(99, 0, 0))).GetAwaiter().GetResult() is null);
+            var ok = plan is { } p && Task.Run(() => pxdUpdate.ApplyAsync(p.Zip, p.Sum, app, Path.Combine(app, exe), [], start: false)).GetAwaiter().GetResult();
+            pxdUpdate.CleanUp(app);
+            Check(r, "update: files replaced in place", ok && File.ReadAllText(Path.Combine(app, exe)) == "new exe"
+                && File.ReadAllText(Path.Combine(app, "app.dll")) == "new dll" && !Directory.EnumerateFiles(app, "*.pxdold").Any());
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("PXD_UPDATE_API", before);
+            listener.Stop();
+        }
+    }
+
+    /// <summary>
     /// The settings folder of the app's former name moves to the new name once (a fake one in DIR\migration; the real
     /// folders and the Run key are never touched here).
     /// </summary>

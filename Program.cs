@@ -11,12 +11,22 @@ internal static class Program
     public const string PipeName = "pxdAudioSwitcher.commands";
     private static Mutex? _instance;
 
+    /// <summary>Where updates come from: the release zip the Toolkit installs.</summary>
+    public const string UpdateRepo = "joshpack/pxdAudioSwitcher";
+    public const string UpdateAsset = @"^pxdAudioSwitcher-.*-win-x64\.zip$";
+
     /// <summary>Started by Windows at sign-in: stay in the tray instead of opening the window.</summary>
     public static bool StartMinimized { get; private set; }
 
     [STAThread]
     public static int Main(string[] args)
     {
+        // Update before anything else. Not for command-line actions (--next-playback… from shortcuts and Stream Deck
+        // buttons): they must act at once and may run many times an hour. A no-op for --self-test, bin\ builds,
+        // PXD_NO_UPDATE=1, offline or a slow GitHub.
+        if (!Commands.HasAction(args) && pxdStandard.pxdUpdate.BeforeStart(UpdateRepo, UpdateAsset, args))
+            return 0;   // the updated copy is starting with the same arguments
+
         // pxd App Standard: window placement lives in windows.json next to settings.json.
         pxdStandard.pxdChrome.Configure(TrayLink.AppId, AppSettings.Folder);
         StartMinimized = args.Any(a => a.Equals("--minimized", StringComparison.OrdinalIgnoreCase));

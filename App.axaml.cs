@@ -43,6 +43,7 @@ public partial class App : Application
                 {
                     SelfTest.Prepare(report);
                     SelfTest.Migration(report);
+                    SelfTest.Update(report);
                     SelfTest.Audio(report);
                     using (var sw = new Switcher(interactive: false))
                         SelfTest.Window(report, sw);
