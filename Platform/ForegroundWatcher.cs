@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace PaxAudioSwitcher.Platform;
+namespace pxdAudioSwitcher.Platform;
 
 /// <summary>
 /// Reports the program (its exe name, e.g. "discord.exe") whenever a different window comes to the front. Uses an

@@ -1,11 +1,11 @@
 using Microsoft.Win32;
 
-namespace PaxAudioSwitcher.Services;
+namespace pxdAudioSwitcher.Services;
 
 /// <summary>Start with Windows through a per-user Run registry entry.</summary>
 public static class Autostart
 {
-    private const string AppName = "PaxAudioSwitcher";
+    private const string AppName = "pxdAudioSwitcher";
     private const string RunKey = @"Software\Microsoft\Windows\CurrentVersion\Run";
 
     public static bool IsEnabled()
@@ -38,7 +38,7 @@ public static class Autostart
         if (string.IsNullOrEmpty(exe))
             return null;
 
-        // Running through "dotnet PaxAudioSwitcher.dll" (e.g. dotnet run): register the dll under dotnet instead.
+        // Running through "dotnet pxdAudioSwitcher.dll" (e.g. dotnet run): register the dll under dotnet instead.
         if (Path.GetFileNameWithoutExtension(exe).Equals("dotnet", StringComparison.OrdinalIgnoreCase))
         {
             var dll = Environment.GetCommandLineArgs().FirstOrDefault();

@@ -1,7 +1,7 @@
-using PaxAudioSwitcher.Audio;
-using PaxAudioSwitcher.Platform;
+using pxdAudioSwitcher.Audio;
+using pxdAudioSwitcher.Platform;
 
-namespace PaxAudioSwitcher.Services;
+namespace pxdAudioSwitcher.Services;
 
 /// <summary>What just happened, for the banner: "PLAYBACK" / "Speakers (Realtek…)".</summary>
 public sealed record SwitchNotice(string Label, string Text, bool Warning = false);
@@ -258,7 +258,7 @@ public sealed class Switcher : IDisposable
         if (exe == _lastForeground)
             return;
         _lastForeground = exe;
-        if (exe == "paxaudioswitcher.exe")
+        if (exe == "pxdaudioswitcher.exe")
             return;
 
         var profile = Settings.Profiles.FirstOrDefault(p => p.Apps.Any(a => a.Equals(exe, StringComparison.OrdinalIgnoreCase)));

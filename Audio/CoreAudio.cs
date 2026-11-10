@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace PaxAudioSwitcher.Audio;
+namespace pxdAudioSwitcher.Audio;
 
 // Windows Core Audio (MMDevice API) declarations: just the parts this app uses.
 

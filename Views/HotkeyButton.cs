@@ -1,8 +1,8 @@
 using Avalonia.Controls;
 using Avalonia.Input;
-using PaxAudioSwitcher.Platform;
+using pxdAudioSwitcher.Platform;
 
-namespace PaxAudioSwitcher.Views;
+namespace pxdAudioSwitcher.Views;
 
 /// <summary>
 /// Shows a hotkey; click it, then press the new combination. Esc cancels, Backspace removes the hotkey. While it is

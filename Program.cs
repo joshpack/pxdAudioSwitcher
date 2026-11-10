@@ -1,14 +1,14 @@
 using System.IO.Pipes;
 using Avalonia;
 using Avalonia.Headless;
-using PaxAudioSwitcher.Audio;
-using PaxAudioSwitcher.Services;
+using pxdAudioSwitcher.Audio;
+using pxdAudioSwitcher.Services;
 
-namespace PaxAudioSwitcher;
+namespace pxdAudioSwitcher;
 
 internal static class Program
 {
-    public const string PipeName = "PaxAudioSwitcher.commands";
+    public const string PipeName = "pxdAudioSwitcher.commands";
     private static Mutex? _instance;
 
     /// <summary>Started by Windows at sign-in: stay in the tray instead of opening the window.</summary>
@@ -17,8 +17,8 @@ internal static class Program
     [STAThread]
     public static int Main(string[] args)
     {
-        // PAX App Standard: window placement lives in windows.json next to settings.json.
-        PaxStandard.PaxChrome.Configure(TrayLink.AppId, AppSettings.Folder);
+        // pxd App Standard: window placement lives in windows.json next to settings.json.
+        pxdStandard.pxdChrome.Configure(TrayLink.AppId, AppSettings.Folder);
         StartMinimized = args.Any(a => a.Equals("--minimized", StringComparison.OrdinalIgnoreCase));
 
         var test = Array.FindIndex(args, a => a.Equals("--self-test", StringComparison.OrdinalIgnoreCase));
@@ -34,12 +34,15 @@ internal static class Program
             return 0;
         }
 
-        _instance = new Mutex(true, @"Local\PaxAudioSwitcher.instance", out var first);
+        _instance = new Mutex(true, @"Local\pxdAudioSwitcher.instance", out var first);
         if (!first)
         {
             // Already running: hand it the command (or just "open your window").
             return Forward(args.Length > 0 ? args : ["--show"]) ? 0 : 1;
         }
+
+        // Settings folder and sign-in entry from the app's former name, before anything reads settings.
+        Migration.Run();
 
         if (Commands.HasAction(args))
         {

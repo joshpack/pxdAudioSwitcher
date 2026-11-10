@@ -4,13 +4,13 @@ using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Avalonia.Threading;
-using PaxAudioSwitcher.Audio;
-using PaxAudioSwitcher.Platform;
-using PaxAudioSwitcher.Services;
-using PaxAudioSwitcher.Views;
-using PaxStandard;
+using pxdAudioSwitcher.Audio;
+using pxdAudioSwitcher.Platform;
+using pxdAudioSwitcher.Services;
+using pxdAudioSwitcher.Views;
+using pxdStandard;
 
-namespace PaxAudioSwitcher;
+namespace pxdAudioSwitcher;
 
 public partial class App : Application
 {
@@ -27,7 +27,7 @@ public partial class App : Application
     {
         AvaloniaXamlLoader.Load(this);
         // After the app's own styles, so the caption buttons' hover colours win over the general Button ones.
-        Styles.Add(PaxChrome.Styles());
+        Styles.Add(pxdChrome.Styles());
     }
 
     public override void OnFrameworkInitializationCompleted()
@@ -42,6 +42,7 @@ public partial class App : Application
                 try
                 {
                     SelfTest.Prepare(report);
+                    SelfTest.Migration(report);
                     SelfTest.Audio(report);
                     using (var sw = new Switcher(interactive: false))
                         SelfTest.Window(report, sw);
@@ -70,9 +71,9 @@ public partial class App : Application
 
             _icon = AppIcon.Create();
             _mutedIcon = AppIcon.Create(muted: true);
-            // PAX Toolkit (or the "Show tray icon" switch) can hide the icon; the app keeps running either way and
+            // pxd Toolkit (or the "Show tray icon" switch) can hide the icon; the app keeps running either way and
             // starting the exe again opens the window.
-            _tray = new TrayIcon { Icon = _icon, ToolTipText = "PAX Audio Switcher", IsVisible = PaxLink.TrayIconVisible(TrayLink.AppId) };
+            _tray = new TrayIcon { Icon = _icon, ToolTipText = "pxd Audio Switcher", IsVisible = pxdLink.TrayIconVisible(TrayLink.AppId) };
             _tray.Clicked += (_, _) => OpenSettings();
             TrayIcon.SetIcons(this, new TrayIcons { _tray });
             _trayLink = new TrayLink(v => _tray.IsVisible = v, a => Dispatcher.UIThread.Post(a));

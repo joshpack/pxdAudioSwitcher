@@ -1,14 +1,14 @@
-using PaxStandard;
+using pxdStandard;
 
-namespace PaxAudioSwitcher.Services;
+namespace pxdAudioSwitcher.Services;
 
 /// <summary>
-/// The PAX Toolkit link for the tray icon: %APPDATA%\PAX\toolkit.json says whether it shows. The file is watched, so
-/// turning the icon off in PAX Toolkit (or in this app's settings, which writes the same file) hides it at once.
+/// The pxd Toolkit link for the tray icon: %APPDATA%\pxd\toolkit.json says whether it shows. The file is watched, so
+/// turning the icon off in pxd Toolkit (or in this app's settings, which writes the same file) hides it at once.
 /// </summary>
 public sealed class TrayLink : IDisposable
 {
-    public const string AppId = "PaxAudioSwitcher";
+    public const string AppId = "pxdAudioSwitcher";
 
     private readonly Action<bool> _apply;
     private readonly Action<Action> _post;
@@ -21,7 +21,7 @@ public sealed class TrayLink : IDisposable
         _apply = apply;
         _post = post;
         Update();
-        _watch = PaxLink.Watch(() => _post(Update));
+        _watch = pxdLink.Watch(() => _post(Update));
     }
 
     public bool Visible => _applied ?? true;
@@ -29,16 +29,16 @@ public sealed class TrayLink : IDisposable
     /// <summary>Raised after the icon was shown or hidden, whichever side changed it.</summary>
     public event Action<bool>? Changed;
 
-    /// <summary>The "Show tray icon" switch: writes toolkit.json (so PAX Toolkit agrees) and applies it now.</summary>
+    /// <summary>The "Show tray icon" switch: writes toolkit.json (so pxd Toolkit agrees) and applies it now.</summary>
     public void Set(bool visible)
     {
-        PaxLink.SetTrayIconVisible(AppId, visible);
+        pxdLink.SetTrayIconVisible(AppId, visible);
         Update();
     }
 
     private void Update()
     {
-        var visible = PaxLink.TrayIconVisible(AppId);
+        var visible = pxdLink.TrayIconVisible(AppId);
         if (visible == _applied)
             return;
         _applied = visible;

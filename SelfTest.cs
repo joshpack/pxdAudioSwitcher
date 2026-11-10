@@ -5,18 +5,18 @@ using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
-using PaxStandard;
-using PaxAudioSwitcher.Audio;
-using PaxAudioSwitcher.Platform;
-using PaxAudioSwitcher.Services;
-using PaxAudioSwitcher.Views;
+using pxdStandard;
+using pxdAudioSwitcher.Audio;
+using pxdAudioSwitcher.Platform;
+using pxdAudioSwitcher.Services;
+using pxdAudioSwitcher.Views;
 
-namespace PaxAudioSwitcher;
+namespace pxdAudioSwitcher;
 
 /// <summary>
 /// --self-test DIR: checks the parts that need real Windows audio without changing anything the user would notice
 /// (the current defaults are re-applied, not switched) and renders the settings window to a PNG without showing it.
-/// It also checks the PAX App Standard parts (window placement, the PAX Toolkit tray link) and draws the README
+/// It also checks the pxd App Standard parts (window placement, the pxd Toolkit tray link) and draws the README
 /// pictures from made-up devices. Nothing is saved to the real settings, windows.json or toolkit.json.
 /// </summary>
 internal static class SelfTest
@@ -95,28 +95,57 @@ internal static class SelfTest
             bmp.Save(Path.Combine(Dir!, $"tab{tab}.png"));
         }
 
-        var bar = window.GetVisualDescendants().OfType<Button>().Count(b => b.Classes.Contains("pax-caption"));
-        r.AppendLine($"Settings window: built and rendered with the PAX title bar ({bar} caption buttons{(window.CanResize ? ", resizable" : "")}; platform window: {window.PlatformImpl?.GetType().Name})");
+        var bar = window.GetVisualDescendants().OfType<Button>().Count(b => b.Classes.Contains("pxd-caption"));
+        r.AppendLine($"Settings window: built and rendered with the pxd title bar ({bar} caption buttons{(window.CanResize ? ", resizable" : "")}; platform window: {window.PlatformImpl?.GetType().Name})");
         window.Close();
         sw.Settings.Profiles.RemoveAt(sw.Settings.Profiles.Count - 1);
     }
 
-    // ---- PAX App Standard ------------------------------------------------------------------------------------------
+    // ---- pxd App Standard ------------------------------------------------------------------------------------------
 
     private static string PlacementDir => Path.Combine(Dir!, "placement");
 
     /// <summary>
     /// Keeps the self-test away from the user's own files: window placement goes to DIR\placement and, unless
-    /// PAX_SHARED_DIR is set already, the PAX Toolkit file to DIR\shared.
+    /// PXD_SHARED_DIR is set already, the pxd Toolkit file to DIR\shared.
     /// </summary>
     public static void Prepare(StringBuilder r)
     {
         if (Directory.Exists(PlacementDir))
             Directory.Delete(PlacementDir, recursive: true);
-        PaxChrome.Configure(TrayLink.AppId, PlacementDir);
-        if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("PAX_SHARED_DIR")))
-            Environment.SetEnvironmentVariable("PAX_SHARED_DIR", Path.Combine(Dir!, "shared"));
+        pxdChrome.Configure(TrayLink.AppId, PlacementDir);
+        if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("PXD_SHARED_DIR")))
+            Environment.SetEnvironmentVariable("PXD_SHARED_DIR", Path.Combine(Dir!, "shared"));
         r.AppendLine("Test folders: placement and toolkit.json kept inside the self-test folder");
+    }
+
+    /// <summary>
+    /// The settings folder of the app's former name moves to the new name once (a fake one in DIR\migration; the real
+    /// folders and the Run key are never touched here).
+    /// </summary>
+    public static void Migration(StringBuilder r)
+    {
+        var root = Path.Combine(Dir!, "migration");
+        if (Directory.Exists(root))
+            Directory.Delete(root, recursive: true);
+        var former = Path.Combine(root, pxdMigrate.FormerName(TrayLink.AppId));
+        var target = Path.Combine(root, TrayLink.AppId);
+        Directory.CreateDirectory(former);
+        File.WriteAllText(Path.Combine(former, "settings.json"), """{ "StartInTray": true }""");
+        File.WriteAllText(Path.Combine(former, "windows.json"), "{}");
+
+        var moved = Services.Migration.DataFolder(root);
+        Check(r, "migration: former settings folder moved to the new name", moved && !Directory.Exists(former)
+            && File.ReadAllText(Path.Combine(target, "settings.json")).Contains("StartInTray") && File.Exists(Path.Combine(target, "windows.json")));
+        File.WriteAllText(Path.Combine(target, "settings.json"), "{}");
+        var again = Services.Migration.DataFolder(root);
+        Check(r, "migration: second run is a no-op", !again && File.ReadAllText(Path.Combine(target, "settings.json")) == "{}");
+        Directory.CreateDirectory(former);
+        File.WriteAllText(Path.Combine(former, "settings.json"), "old");
+        Check(r, "migration: an existing new folder is never overwritten", !Services.Migration.DataFolder(root)
+            && File.ReadAllText(Path.Combine(target, "settings.json")) == "{}");
+        Check(r, "migration: Run entry keeps its arguments", pxdMigrate.ArgsOf("\"C:\\Apps\\x\\a.exe\" --minimized") == "--minimized");
+        Check(r, "migration: nothing to move on a fresh install", !Services.Migration.DataFolder(Path.Combine(root, "empty")));
     }
 
     /// <summary>Saves a size, restores it, restores a spot on screen, and ignores a spot that is on no screen.</summary>
@@ -156,13 +185,13 @@ internal static class SelfTest
         File.Delete(file);
     }
 
-    /// <summary>Writing toolkit.json (as PAX Toolkit does) shows and hides the tray icon; the app's own switch writes it.</summary>
+    /// <summary>Writing toolkit.json (as pxd Toolkit does) shows and hides the tray icon; the app's own switch writes it.</summary>
     public static void TrayIconLink(StringBuilder r)
     {
-        var shared = PaxLink.SharedDir;
+        var shared = pxdLink.SharedDir;
         Directory.CreateDirectory(shared);
-        if (File.Exists(PaxLink.FilePath))
-            File.Delete(PaxLink.FilePath);
+        if (File.Exists(pxdLink.FilePath))
+            File.Delete(pxdLink.FilePath);
 
         // The same class the app uses, with a stand-in for the tray icon (a real one would appear on screen).
         var shown = true;
@@ -173,7 +202,7 @@ internal static class SelfTest
         bool ToolkitWrites(bool visible)
         {
             changed.Reset();
-            File.WriteAllText(PaxLink.FilePath, $$"""{ "schema": 1, "apps": { "PaxWatermark": { "trayIcon": true }, "PaxAudioSwitcher": { "trayIcon": {{(visible ? "true" : "false")}} } } }""");
+            File.WriteAllText(pxdLink.FilePath, $$"""{ "schema": 1, "apps": { "pxdWatermark": { "trayIcon": true }, "pxdAudioSwitcher": { "trayIcon": {{(visible ? "true" : "false")}} } } }""");
             changed.WaitOne(TimeSpan.FromSeconds(5));
             return shown == visible && link.Visible == visible;
         }
@@ -182,10 +211,10 @@ internal static class SelfTest
         Check(r, "toolkit.json trayIcon=true shows it again", ToolkitWrites(true));
 
         link.Set(false);
-        var other = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(PaxLink.FilePath))?["apps"]?["PaxWatermark"]?["trayIcon"]?.GetValue<bool>();
-        Check(r, "Show tray icon switch writes toolkit.json (other apps kept)", !shown && !PaxLink.TrayIconVisible(TrayLink.AppId) && other == true);
+        var other = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(pxdLink.FilePath))?["apps"]?["pxdWatermark"]?["trayIcon"]?.GetValue<bool>();
+        Check(r, "Show tray icon switch writes toolkit.json (other apps kept)", !shown && !pxdLink.TrayIconVisible(TrayLink.AppId) && other == true);
         link.Set(true);
-        Check(r, "Show tray icon switch on again", shown && PaxLink.TrayIconVisible(TrayLink.AppId));
+        Check(r, "Show tray icon switch on again", shown && pxdLink.TrayIconVisible(TrayLink.AppId));
     }
 
     /// <summary>The README pictures: made-up devices and profiles, nothing from this PC, drawn off screen.</summary>
@@ -205,7 +234,7 @@ internal static class SelfTest
         var w = OffScreen(new SettingsWindow(sw, () => { }));
         w.Show();
         if (w.FindControl<TextBox>("CliText") is { } cli && Environment.ProcessPath is { } exe)
-            cli.Text = cli.Text?.Replace(exe, @"C:\Apps\PaxAudioSwitcher\PaxAudioSwitcher.exe");
+            cli.Text = cli.Text?.Replace(exe, @"C:\Apps\pxdAudioSwitcher\pxdAudioSwitcher.exe");
 
         var folder = Path.Combine(Dir!, "readme");
         Directory.CreateDirectory(folder);

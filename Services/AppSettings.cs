@@ -1,7 +1,7 @@
 using System.Text.Json;
-using PaxAudioSwitcher.Platform;
+using pxdAudioSwitcher.Platform;
 
-namespace PaxAudioSwitcher.Services;
+namespace pxdAudioSwitcher.Services;
 
 public enum NotifyMode { Banner, BannerAndSound, Sound, Off }
 
@@ -61,11 +61,11 @@ public sealed class AppSettings
     /// <summary>Last known name of every device seen, so unplugged devices in a profile still have a name.</summary>
     public Dictionary<string, string> KnownNames { get; set; } = new();
 
-    /// <summary>%APPDATA%\PaxAudioSwitcher, or the folder in PAXAS_DATA_DIR (tests).</summary>
+    /// <summary>%APPDATA%\pxdAudioSwitcher, or the folder in PXDAS_DATA_DIR (tests).</summary>
     public static string Folder =>
-        Environment.GetEnvironmentVariable("PAXAS_DATA_DIR") is { Length: > 0 } dir
+        Environment.GetEnvironmentVariable("PXDAS_DATA_DIR") is { Length: > 0 } dir
             ? dir
-            : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "PaxAudioSwitcher");
+            : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "pxdAudioSwitcher");
 
     private static string FilePath => Path.Combine(Folder, "settings.json");
 

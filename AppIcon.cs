@@ -4,7 +4,7 @@ using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using ShapePath = Avalonia.Controls.Shapes.Path;
 
-namespace PaxAudioSwitcher;
+namespace pxdAudioSwitcher;
 
 /// <summary>The app's speaker mark, drawn from vector geometry so it stays crisp at every size.</summary>
 public static class AppIcon

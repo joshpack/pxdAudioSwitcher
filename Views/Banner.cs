@@ -4,10 +4,10 @@ using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Threading;
-using PaxAudioSwitcher.Services;
+using pxdAudioSwitcher.Services;
 using ShapePath = Avalonia.Controls.Shapes.Path;
 
-namespace PaxAudioSwitcher.Views;
+namespace pxdAudioSwitcher.Views;
 
 /// <summary>
 /// The little pop-up in the bottom-right corner after a switch. One window is reused, so cycling quickly through

@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
-namespace PaxAudioSwitcher.Audio;
+namespace pxdAudioSwitcher.Audio;
 
 /// <summary>
 /// The per-app output and input devices from Windows' Volume mixer ("App volume and device preferences"). An app given

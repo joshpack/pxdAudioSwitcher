@@ -1,11 +1,11 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        x:Class="PaxAudioSwitcher.Views.SettingsWindow"
-        Title="PAX Audio Switcher"
+        x:Class="pxdAudioSwitcher.Views.SettingsWindow"
+        Title="pxd Audio Switcher"
         Width="560" Height="740" MinWidth="460" MinHeight="520"
         WindowStartupLocation="CenterScreen">
 
-  <!-- The PAX title bar (icon, name, the hotkey status and the caption buttons) is added in code: PaxChrome.Wrap -->
+  <!-- The pxd title bar (icon, name, the hotkey status and the caption buttons) is added in code: pxdChrome.Wrap -->
   <Grid Margin="22,10,22,16">
 
     <TabControl x:Name="Tabs" Padding="0,10,0,0">
@@ -150,13 +150,13 @@
                 <Grid ColumnDefinitions="*,Auto">
                   <StackPanel Spacing="1" VerticalAlignment="Center">
                     <TextBlock Text="Show tray icon" />
-                    <TextBlock Text="Also set from PAX Toolkit. Hidden, the hotkeys keep working; start the app again for this window" Classes="muted" FontSize="11" TextWrapping="Wrap" />
+                    <TextBlock Text="Also set from pxd Toolkit. Hidden, the hotkeys keep working; start the app again for this window" Classes="muted" FontSize="11" TextWrapping="Wrap" />
                   </StackPanel>
                   <ToggleSwitch x:Name="TrayIconSwitch" Grid.Column="1" OnContent="" OffContent="" />
                 </Grid>
                 <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
                   <StackPanel Spacing="1" VerticalAlignment="Center">
-                    <TextBlock Text="Quit PAX Audio Switcher" />
+                    <TextBlock Text="Quit pxd Audio Switcher" />
                     <TextBlock Text="Closing this window keeps it running; this stops the hotkeys too" Classes="muted" FontSize="11" TextWrapping="Wrap" />
                   </StackPanel>
                   <Button x:Name="QuitButton" Grid.Column="1" Content="Quit" VerticalAlignment="Center" />

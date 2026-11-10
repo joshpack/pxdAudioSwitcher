@@ -4,10 +4,10 @@ using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using ShapePath = Avalonia.Controls.Shapes.Path;
 
-namespace PaxAudioSwitcher;
+namespace pxdAudioSwitcher;
 
 /// <summary>
-/// PAX Audio Switcher's icon: a white speaker with swap arrows on an electric-blue tile (red with an X when the mic is muted).
+/// pxd Audio Switcher's icon: a white speaker with swap arrows on an electric-blue tile (red with an X when the mic is muted).
 /// Drawn from vector shapes so it stays crisp at every size; used for the tray, windows and the exe's .ico.
 /// </summary>
 public static class BrandIcon

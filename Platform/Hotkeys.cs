@@ -1,7 +1,7 @@
 using System.Runtime.InteropServices;
 using Avalonia.Input;
 
-namespace PaxAudioSwitcher.Platform;
+namespace pxdAudioSwitcher.Platform;
 
 /// <summary>A key combination: Windows modifier flags (Alt 1, Ctrl 2, Shift 4, Win 8) plus a virtual-key code.</summary>
 public sealed record Hotkey(int Mods, int Vk)
@@ -85,7 +85,7 @@ public sealed class HotkeyManager : IDisposable
             Size = Marshal.SizeOf<WndClassEx>(),
             WndProc = Marshal.GetFunctionPointerForDelegate(_proc),
             Instance = GetModuleHandle(null),
-            ClassName = "PaxAudioSwitcherHotkeys",
+            ClassName = "pxdAudioSwitcherHotkeys",
         };
         RegisterClassEx(ref cls);
         _hwnd = CreateWindowEx(0, cls.ClassName, "", 0, 0, 0, 0, 0, HwndMessage, IntPtr.Zero, cls.Instance, IntPtr.Zero);

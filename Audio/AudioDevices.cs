@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace PaxAudioSwitcher.Audio;
+namespace pxdAudioSwitcher.Audio;
 
 /// <summary>One playback or recording device as Windows lists it.</summary>
 /// <param name="Name">What the Sound control panel shows, e.g. "Speakers".</param>

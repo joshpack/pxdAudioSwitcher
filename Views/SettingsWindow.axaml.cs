@@ -3,14 +3,14 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
-using PaxAudioSwitcher.Audio;
-using PaxAudioSwitcher.Platform;
-using PaxAudioSwitcher.Services;
-using PaxStandard;
+using pxdAudioSwitcher.Audio;
+using pxdAudioSwitcher.Platform;
+using pxdAudioSwitcher.Services;
+using pxdStandard;
 using Ellipse = Avalonia.Controls.Shapes.Ellipse;
 using ShapePath = Avalonia.Controls.Shapes.Path;
 
-namespace PaxAudioSwitcher.Views;
+namespace pxdAudioSwitcher.Views;
 
 /// <summary>
 /// The whole interface: one window, created when opened and thrown away when closed, so while the app sits in the tray
@@ -32,7 +32,7 @@ public partial class SettingsWindow : Window
         _menuChanged = null!;
     }
 
-    /// <param name="tray">The tray icon's PAX Toolkit link, for the "Show tray icon" switch (null in the self-test).</param>
+    /// <param name="tray">The tray icon's pxd Toolkit link, for the "Show tray icon" switch (null in the self-test).</param>
     /// <param name="quit">Quits the whole app (the tray icon may be hidden, so the window needs its own way out).</param>
     public SettingsWindow(Switcher sw, Action menuChanged, TrayLink? tray = null, Action? quit = null)
     {
@@ -41,11 +41,11 @@ public partial class SettingsWindow : Window
         _menuChanged = menuChanged;
         Icon = AppIcon.Create(128);
 
-        // The PAX title bar: icon, name, the hotkey status, then minimize / maximize / close.
+        // The pxd title bar: icon, name, the hotkey status, then minimize / maximize / close.
         var content = (Control)Content!;
         Content = null;
-        Content = PaxChrome.Wrap(this, content, "PAX Audio Switcher", BrandIcon.Render(36), resizable: true, extras: BuildStatusPill());
-        PaxChrome.RememberPlacement(this, PlacementKey);
+        Content = pxdChrome.Wrap(this, content, "pxd Audio Switcher", BrandIcon.Render(36), resizable: true, extras: BuildStatusPill());
+        pxdChrome.RememberPlacement(this, PlacementKey);
 
         Ctl<ContentControl>("PlaybackHotkeySlot").Content = HotkeyEditor(S.PlaybackHotkey, v => S.PlaybackHotkey = v);
         Ctl<ContentControl>("RecordingHotkeySlot").Content = HotkeyEditor(S.RecordingHotkey, v => S.RecordingHotkey = v);
@@ -55,7 +55,7 @@ public partial class SettingsWindow : Window
         Ctl<Button>("QuitButton").Click += (_, _) => quit?.Invoke();
 
         var trayIcon = Ctl<ToggleSwitch>("TrayIconSwitch");
-        trayIcon.IsChecked = tray?.Visible ?? PaxLink.TrayIconVisible(TrayLink.AppId);
+        trayIcon.IsChecked = tray?.Visible ?? pxdLink.TrayIconVisible(TrayLink.AppId);
         trayIcon.IsCheckedChanged += (_, _) =>
         {
             if (_loading)
@@ -63,11 +63,11 @@ public partial class SettingsWindow : Window
             if (tray is not null)
                 tray.Set(trayIcon.IsChecked == true);
             else
-                PaxLink.SetTrayIconVisible(TrayLink.AppId, trayIcon.IsChecked == true);
+                pxdLink.SetTrayIconVisible(TrayLink.AppId, trayIcon.IsChecked == true);
         };
         if (tray is not null)
         {
-            // Turned on or off from PAX Toolkit while this window is open: keep the switch in step.
+            // Turned on or off from pxd Toolkit while this window is open: keep the switch in step.
             void OnTrayChanged(bool visible)
             {
                 _loading = true;
@@ -461,7 +461,7 @@ public partial class SettingsWindow : Window
             {
                 try
                 {
-                    if (proc.MainWindowHandle != IntPtr.Zero && ForegroundWatcher.ExeName((uint)proc.Id) is { } exe && exe != "paxaudioswitcher.exe")
+                    if (proc.MainWindowHandle != IntPtr.Zero && ForegroundWatcher.ExeName((uint)proc.Id) is { } exe && exe != "pxdaudioswitcher.exe")
                         names.Add(exe);
                 }
                 catch
@@ -545,7 +545,7 @@ public partial class SettingsWindow : Window
         };
         BuildSpots();
 
-        var exe = Environment.ProcessPath ?? "PaxAudioSwitcher.exe";
+        var exe = Environment.ProcessPath ?? "pxdAudioSwitcher.exe";
         Ctl<TextBox>("CliText").Text =
             $"\"{exe}\" --next-playback\n" +
             "  --next-recording   --toggle-mute   --mute   --unmute\n" +

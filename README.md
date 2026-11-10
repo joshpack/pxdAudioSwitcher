@@ -1,9 +1,9 @@
-# PAX Audio Switcher
+# pxd Audio Switcher
 
 **Switch speakers, headset and microphone with one key.** A small Windows tray app: press a hotkey to move to the next playback or recording device, switch a whole setup with a profile, or let a profile kick in by itself when a game or call app comes to the front.
 
 <p align="center">
-  <img src="docs/screenshots/devices.png" width="540" alt="PAX Audio Switcher Devices tab: speakers in use, headset and TV in the playback list with their hotkey, three microphones below, and the mute hotkey">
+  <img src="docs/screenshots/devices.png" width="540" alt="pxd Audio Switcher Devices tab: speakers in use, headset and TV in the playback list with their hotkey, three microphones below, and the mute hotkey">
 </p>
 
 ## Features
@@ -16,13 +16,13 @@
 - **Feedback** after each switch: a small banner that never steals focus, a sound played on the new device, both, or nothing.
 - **Banner where you want it.** Click one of nine spots on a little monitor in Settings (corners, edge middles or the center) and a preview shows there. It can follow the screen your mouse is on or stay on the main screen.
 - **Start minimized** to the tray, also when you open the app yourself.
-- **Apps with their own device come along.** An app given its own output in Windows' Volume mixer (*Settings → System → Sound → Volume mixer*) ignores the default device, so switching normally leaves it behind. PAX clears that app's own device when you switch, so it follows; turn this off in Settings to keep such apps where they are. *Reset all apps* clears every app's own device at once, including games that aren't running.
+- **Apps with their own device come along.** An app given its own output in Windows' Volume mixer (*Settings → System → Sound → Volume mixer*) ignores the default device, so switching normally leaves it behind. pxd Audio Switcher clears that app's own device when you switch, so it follows; turn this off in Settings to keep such apps where they are. *Reset all apps* clears every app's own device at once, including games that aren't running.
 - **Communications device** can switch along with the default one, or stay put so calls keep using the same headset.
 - **Command line** for desktop shortcuts, Stream Deck buttons and scripts. Works whether the app is running or not.
 - **Hotkey clash warning** when another program already owns a combination.
 - **Light.** The settings window only exists while it is open; nothing polls in the background.
 - **Start when I sign in**, optional.
-- **Works with [PAX Toolkit](https://github.com/joshpack/PaxToolkit).** Turn the tray icon on or off there (or with *Show tray icon* in Settings); with it hidden the hotkeys keep working and starting the app again opens the window. The window remembers its size and position.
+- **Works with [pxd Toolkit](https://github.com/joshpack/pxdToolkit).** Turn the tray icon on or off there (or with *Show tray icon* in Settings); with it hidden the hotkeys keep working and starting the app again opens the window. The window remembers its size and position.
 
 | Profiles | Settings |
 | --- | --- |
@@ -57,9 +57,9 @@ It was written from scratch and shares no code with other audio switchers.
 ## Install (Windows)
 
 1. Install the **[.NET 10 Runtime](https://dotnet.microsoft.com/download/dotnet/10.0)** (x64) if you don't have it. The plain ".NET Runtime" is enough; the ".NET Desktop Runtime" includes it, so that works too.
-2. Download **`PaxAudioSwitcher-1.3.0-win-x64.zip`** from **[the latest release](https://github.com/joshpack/PaxAudioSwitcher/releases/latest)** (and `PaxAudioSwitcher-1.3.0-win-x64.zip.sha256` if you want to check it: `Get-FileHash PaxAudioSwitcher-1.3.0-win-x64.zip` in PowerShell).
-3. Unzip it somewhere permanent, for example `%USERPROFILE%\Apps\PaxAudioSwitcher`.
-4. Run `PaxAudioSwitcher.exe`. It doesn't need administrator rights.
+2. Download **`pxdAudioSwitcher-1.4.0-win-x64.zip`** from **[the latest release](https://github.com/joshpack/pxdAudioSwitcher/releases/latest)** (and `pxdAudioSwitcher-1.4.0-win-x64.zip.sha256` if you want to check it: `Get-FileHash pxdAudioSwitcher-1.4.0-win-x64.zip` in PowerShell).
+3. Unzip it somewhere permanent, for example into `%USERPROFILE%\Apps` (the zip holds a `pxdAudioSwitcher` folder).
+4. Run `pxdAudioSwitcher.exe`. It doesn't need administrator rights.
 
 The exe isn't code-signed, so SmartScreen may warn the first time: choose **More info → Run anyway**.
 
@@ -68,11 +68,11 @@ The exe isn't code-signed, so SmartScreen may warn the first time: choose **More
 - The settings window opens and a speaker icon appears in the tray. Hover it to see the current playback device and microphone.
 - **Click the tray icon** to open the settings. **Right-click** it for *Playback* and *Recording* submenus (pick any device), *Profiles*, *Mute microphone*, *Settings…* and *Quit*.
 - Closing the window keeps the hotkeys working from the tray. *Quit* (tray menu, or the **Quit** button on the Settings tab) stops them.
-- With **Show tray icon** off (Settings tab, or in PAX Toolkit), the app runs without an icon; start `PaxAudioSwitcher.exe` again to open the window.
+- With **Show tray icon** off (Settings tab, or in pxd Toolkit), the app runs without an icon; start `pxdAudioSwitcher.exe` again to open the window.
 - On the **Devices** tab, untick devices you never want the hotkey to land on. With everything ticked, the hotkey goes through every device that is plugged in, including ones you add later.
 - To change a hotkey, click it and press the new combination. <kbd>Esc</kbd> cancels, <kbd>Backspace</kbd> removes the hotkey. Your other hotkeys are paused while you do this.
 - If the status in the title bar says **hotkey blocked**, another program owns that combination; pick a different one.
-- Switch on **Start when I sign in** (Settings tab) to start with Windows. It then starts quietly in the tray and only opens the window when a hotkey couldn't be registered. This adds the value `PaxAudioSwitcher` under `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`.
+- Switch on **Start when I sign in** (Settings tab) to start with Windows. It then starts quietly in the tray and only opens the window when a hotkey couldn't be registered. This adds the value `pxdAudioSwitcher` under `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`.
 - Switch on **Start minimized to the tray** to keep the window closed even when you start the app yourself. If a hotkey is blocked, a banner says so instead of the window opening.
 - Under **Banner position**, click where on the screen the banner should appear. A preview pops up there.
 
@@ -90,9 +90,9 @@ All of them can be changed or removed. A hotkey needs at least one of Ctrl, Alt,
 ## Command line
 
 ```bat
-PaxAudioSwitcher.exe --next-playback
-PaxAudioSwitcher.exe --profile "Gaming"
-PaxAudioSwitcher.exe --playback "headset" --recording "studio"
+pxdAudioSwitcher.exe --next-playback
+pxdAudioSwitcher.exe --profile "Gaming"
+pxdAudioSwitcher.exe --playback "headset" --recording "studio"
 ```
 
 | Option | What it does |
@@ -111,38 +111,40 @@ Options can be combined. When the app is already running they are passed to it; 
 
 ## Settings file
 
-Everything is saved as JSON in `%APPDATA%\PaxAudioSwitcher\settings.json`: the hotkeys, which devices are in each cycle (`PlaybackCycle`, `RecordingCycle`; empty means all), `MoveAppsWithOwnDevice`, `SetCommunications`, `Notify` (`Banner`, `BannerAndSound`, `Sound` or `Off`), `BannerSpot` (0 to 8, left to right and top to bottom; 8 is bottom right), `BannerFollowsMouse`, `StartInTray`, the profiles, and the last-known name of every device (so a profile can still name a device that is unplugged). Delete the file to go back to the defaults.
+Everything is saved as JSON in `%APPDATA%\pxdAudioSwitcher\settings.json`: the hotkeys, which devices are in each cycle (`PlaybackCycle`, `RecordingCycle`; empty means all), `MoveAppsWithOwnDevice`, `SetCommunications`, `Notify` (`Banner`, `BannerAndSound`, `Sound` or `Off`), `BannerSpot` (0 to 8, left to right and top to bottom; 8 is bottom right), `BannerFollowsMouse`, `StartInTray`, the profiles, and the last-known name of every device (so a profile can still name a device that is unplugged). Delete the file to go back to the defaults.
 
-The window's size, position and maximized state are kept next to it in `windows.json`. Whether the tray icon shows is kept in `%APPDATA%\PAX\toolkit.json` (`apps.PaxAudioSwitcher.trayIcon`), the file PAX Toolkit shares with every PAX app; the app watches it, so a change there shows or hides the icon at once.
+The window's size, position and maximized state are kept next to it in `windows.json`. Whether the tray icon shows is kept in `%APPDATA%\pxd\toolkit.json` (`apps.pxdAudioSwitcher.trayIcon`), the file pxd Toolkit shares with every pxd app; the app watches it, so a change there shows or hides the icon at once.
+
+Updating from a version that had an earlier name: the first start moves the old settings folder to `%APPDATA%\pxdAudioSwitcher` and the old "Start when I sign in" entry to the `pxdAudioSwitcher` value (same arguments, same on/off state in Task Manager). Nothing needs doing by hand.
 
 ## Self-test
 
 ```bat
-PaxAudioSwitcher.exe --self-test C:\Temp\pax-test
+pxdAudioSwitcher.exe --self-test C:\Temp\pxd-test
 ```
 
 Writes `report.txt` into that folder: the devices it found, whether re-applying the current defaults works (the defaults are set to what they already are, so nothing audibly changes), which running apps have their own output device (read only), and which hotkeys are free. It also saves `tab0.png` to `tab2.png`, pictures of the settings window drawn on Avalonia's headless platform, so no window ever opens on your screen. The report and pictures contain your real device names.
 
-It then checks that the window's size and position are saved and restored (and ignored when they are on no screen), and that changing `toolkit.json` shows and hides the tray icon, using copies inside the test folder (`placement\`, `shared\`) instead of your real files. Finally it draws the README pictures into `readme\` from made-up devices. Nothing in your settings is changed.
+It first checks that a settings folder under the app's earlier name is moved once (a made-up one in `migration\`). It then checks that the window's size and position are saved and restored (and ignored when they are on no screen), and that changing `toolkit.json` shows and hides the tray icon, using copies inside the test folder (`placement\`, `shared\`) instead of your real files. Finally it draws the README pictures into `readme\` from made-up devices. Nothing in your settings is changed.
 
 ## Uninstall
 
 1. On the Settings tab, switch off **Start when I sign in**.
 2. Right-click the tray icon → **Quit**.
-3. Delete the app folder and `%APPDATA%\PaxAudioSwitcher`.
+3. Delete the app folder and `%APPDATA%\pxdAudioSwitcher`.
 
 ## Build from source
 
 Windows with the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0):
 
 ```bash
-git clone https://github.com/joshpack/PaxAudioSwitcher.git
-cd PaxAudioSwitcher
+git clone https://github.com/joshpack/pxdAudioSwitcher.git
+cd pxdAudioSwitcher
 dotnet run
 dotnet publish -c Release -r win-x64 --self-contained false -p:DebugType=none -o publish/win-x64
 ```
 
-The version comes from `<Version>` in `PaxAudioSwitcher.csproj`. For a copy that doesn't need the .NET Runtime installed, use `--self-contained true` (a bigger download).
+The version comes from `<Version>` in `pxdAudioSwitcher.csproj`. For a copy that doesn't need the .NET Runtime installed, use `--self-contained true` (a bigger download).
 
 ## Code layout
 
@@ -160,7 +162,7 @@ The version comes from `<Version>` in `PaxAudioSwitcher.csproj`. For a copy that
 | `Services/AppSettings.cs` | Settings and profiles |
 | `Services/Autostart.cs` | Start at sign-in |
 | `Services/TrayLink.cs` | Shows or hides the tray icon as `toolkit.json` says |
-| `PaxStandard.cs` | Shared PAX App Standard code: the title bar, remembered window placement, the PAX Toolkit link |
+| `pxdStandard.cs` | Shared pxd App Standard code: the title bar, remembered window placement, the pxd Toolkit link |
 | `Views/SettingsWindow.axaml(.cs)` | The settings window |
 | `Views/HotkeyButton.cs` | Click-and-press hotkey picker |
 | `Views/Banner.cs` | The corner banner |
