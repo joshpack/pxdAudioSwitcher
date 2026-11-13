@@ -474,11 +474,74 @@ public partial class SettingsWindow : Window
         return names.ToList();
     }
 
+    // ---- Games that don't follow ------------------------------------------------------------------------------------
+
+    private void BuildGames()
+    {
+        var list = Ctl<StackPanel>("GameList");
+        list.Children.Clear();
+        foreach (var g in S.GameNudges)
+        {
+            var game = g;
+            var key = new HotkeyButton(g.Key) { AllowPlainKeys = true };
+            // Pause this app's own hotkeys while the key is typed, so pressing a hotkey here doesn't switch anything.
+            key.CaptureStarted += _sw.PauseHotkeys;
+            key.CaptureEnded += _sw.RegisterHotkeys;
+            key.ValueChanged += v =>
+            {
+                game.Key = v;
+                S.Save();
+            };
+
+            var remove = new Button { Content = "✕", Classes = { "ghost" }, MinHeight = 32, Padding = new Thickness(10, 2) };
+            ToolTip.SetTip(remove, "Remove");
+            remove.Click += (_, _) =>
+            {
+                S.GameNudges.Remove(game);
+                S.Save();
+                BuildGames();
+            };
+
+            var row = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto,Auto"), ColumnSpacing = 8 };
+            row.Children.Add(new TextBlock { Text = g.Exe, VerticalAlignment = VerticalAlignment.Center });
+            Grid.SetColumn(key, 1);
+            row.Children.Add(key);
+            Grid.SetColumn(remove, 2);
+            row.Children.Add(remove);
+            list.Children.Add(row);
+        }
+
+        if (S.GameNudges.Count == 0)
+            list.Children.Add(new TextBlock { Text = "No games added.", Classes = { "muted" }, FontSize = 12 });
+    }
+
+    private void WireGamePicker()
+    {
+        var pick = Ctl<ComboBox>("GamePick");
+        pick.DropDownOpened += (_, _) =>
+        {
+            pick.Items.Clear();
+            foreach (var exe in RunningPrograms().Where(e => S.GameNudges.All(g => !g.Exe.Equals(e, StringComparison.OrdinalIgnoreCase))))
+                pick.Items.Add(new ComboBoxItem { Content = exe, Tag = exe });
+        };
+        pick.SelectionChanged += (_, _) =>
+        {
+            if (pick.SelectedItem is not ComboBoxItem { Tag: string exe })
+                return;
+            pick.SelectedItem = null;
+            S.GameNudges.Add(new GameNudge { Exe = exe });
+            S.Save();
+            BuildGames();
+        };
+    }
+
     // ---- Settings tab ----------------------------------------------------------------------------------------------
 
     private void LoadSettingsTab()
     {
         _loading = true;
+        BuildGames();
+        WireGamePicker();
         var notify = Ctl<ComboBox>("NotifyBox");
         notify.SelectedIndex = (int)S.Notify;
         notify.SelectionChanged += (_, _) =>

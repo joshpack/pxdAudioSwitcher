@@ -65,21 +65,36 @@ public sealed record Hotkey(int Mods, int Vk)
 /// <summary>
 /// System-wide hotkeys through RegisterHotKey on a hidden message-only window. The window lives on the UI thread, whose
 /// message loop (Avalonia's) delivers WM_HOTKEY to it, so the callbacks run on the UI thread too.
+/// <para>
+/// Many games ask Windows to ignore RegisterHotKey hotkeys while they are in front (raw input with RIDEV_NOHOTKEYS),
+/// so a low-level keyboard hook also watches for exactly the registered combinations. It only compares each key with
+/// the registered hotkeys, holds back just those combinations (so the game doesn't act on them as well) and posts the
+/// action to the window, returning at once. Everything else passes straight through untouched.
+/// </para>
 /// </summary>
 public sealed class HotkeyManager : IDisposable
 {
     private const int WmHotkey = 0x0312;
+    private const int WmFire = 0x8001;        // WM_APP + 1: the hook saw a hotkey; wParam is its id
+    private const int WmRehook = 0x8002;      // WM_APP + 2: put the hook back (Windows drops slow hooks silently)
     private const int ModNoRepeat = 0x4000;
+    private const int WhKeyboardLl = 13;
     private static readonly IntPtr HwndMessage = new(-3);
 
     private readonly WndProc _proc;   // kept in a field so the delegate is never collected while Windows holds it
+    private readonly HookProc _hookProc;
     private readonly IntPtr _hwnd;
     private readonly Dictionary<int, Action> _actions = new();
+    private readonly Dictionary<int, Hotkey> _keys = new();
+    private readonly HashSet<int> _held = new();   // keys whose press was held back; their repeats and release are too
+    private readonly Timer _rehook;
+    private IntPtr _hook;
     private int _nextId = 1;
 
     public HotkeyManager()
     {
         _proc = OnMessage;
+        _hookProc = OnKey;
         var cls = new WndClassEx
         {
             Size = Marshal.SizeOf<WndClassEx>(),
@@ -89,6 +104,10 @@ public sealed class HotkeyManager : IDisposable
         };
         RegisterClassEx(ref cls);
         _hwnd = CreateWindowEx(0, cls.ClassName, "", 0, 0, 0, 0, 0, HwndMessage, IntPtr.Zero, cls.Instance, IntPtr.Zero);
+        Hook();
+        // Windows quietly removes a low-level hook whose thread was ever too slow to answer; re-hooking every 30 s
+        // (on the UI thread, through the window) means a dropped hook comes back on its own.
+        _rehook = new Timer(_ => PostMessage(_hwnd, WmRehook, IntPtr.Zero, IntPtr.Zero), null, 30_000, 30_000);
     }
 
     /// <summary>Registers a hotkey. Returns false when another program already owns that combination.</summary>
@@ -98,6 +117,7 @@ public sealed class HotkeyManager : IDisposable
         if (!RegisterHotKey(_hwnd, id, key.Mods | ModNoRepeat, key.Vk))
             return false;
         _actions[id] = action;
+        _keys[id] = key;
         return true;
     }
 
@@ -106,11 +126,85 @@ public sealed class HotkeyManager : IDisposable
         foreach (var id in _actions.Keys)
             UnregisterHotKey(_hwnd, id);
         _actions.Clear();
+        _keys.Clear();
+        _held.Clear();
+    }
+
+    private void Hook()
+    {
+        if (_hook != IntPtr.Zero)
+            UnhookWindowsHookEx(_hook);
+        _hook = SetWindowsHookEx(WhKeyboardLl, _hookProc, GetModuleHandle(null), 0);
+    }
+
+    /// <summary>
+    /// Runs for every key on the system, so it does as little as possible: compare with the registered hotkeys, post the
+    /// match to the window, and hold back only that key. It never runs the action itself (switching takes too long for
+    /// a keyboard hook).
+    /// </summary>
+    private IntPtr OnKey(int code, IntPtr message, IntPtr data)
+    {
+        if (code >= 0 && _keys.Count > 0)
+        {
+            var msg = message.ToInt32();
+            var vk = Marshal.ReadInt32(data);
+            // Keys typed by programs (our own game key press included) never count as a hotkey: only real presses do.
+            if ((Marshal.ReadInt32(data, 8) & 0x10) != 0)   // KBDLLHOOKSTRUCT.flags & LLKHF_INJECTED
+                return CallNextHookEx(IntPtr.Zero, code, message, data);
+            var down = msg is 0x0100 or 0x0104;   // WM_KEYDOWN, WM_SYSKEYDOWN
+            var up = msg is 0x0101 or 0x0105;     // WM_KEYUP, WM_SYSKEYUP
+
+            if (_held.Contains(vk))
+            {
+                if (up)
+                    _held.Remove(vk);
+                return new IntPtr(1);   // the repeats and the release of a hotkey we took
+            }
+
+            if (down)
+            {
+                var mods = CurrentMods();
+                foreach (var (id, key) in _keys)
+                {
+                    if (key.Vk != vk || key.Mods != mods)
+                        continue;
+                    _held.Add(vk);
+                    PostMessage(_hwnd, WmFire, new IntPtr(id), IntPtr.Zero);
+                    if ((mods & (Hotkey.Alt | Hotkey.Win)) != 0)
+                        // Alt or Win released with nothing in between opens a menu or Start; a harmless unassigned
+                        // key in between stops that, the same way Windows does it for its own hotkeys.
+                        TapMaskKey();
+                    return new IntPtr(1);
+                }
+            }
+        }
+
+        return CallNextHookEx(IntPtr.Zero, code, message, data);
+    }
+
+    private static int CurrentMods() =>
+        (Pressed(0x11) ? Hotkey.Ctrl : 0) | (Pressed(0x12) ? Hotkey.Alt : 0) | (Pressed(0x10) ? Hotkey.Shift : 0)
+        | (Pressed(0x5B) || Pressed(0x5C) ? Hotkey.Win : 0);
+
+    private static bool Pressed(int vk) => (GetAsyncKeyState(vk) & 0x8000) != 0;
+
+    private static void TapMaskKey()
+    {
+        var inputs = new Input[2];
+        inputs[0] = new Input { Type = 1, Key = new KeybdInput { Vk = 0xE8 } };
+        inputs[1] = new Input { Type = 1, Key = new KeybdInput { Vk = 0xE8, Flags = 0x0002 } };   // KEYEVENTF_KEYUP
+        SendInput(2, inputs, Marshal.SizeOf<Input>());
     }
 
     private IntPtr OnMessage(IntPtr hwnd, uint msg, IntPtr wParam, IntPtr lParam)
     {
-        if (msg == WmHotkey && _actions.TryGetValue(wParam.ToInt32(), out var action))
+        if (msg == WmRehook)
+        {
+            Hook();
+            return IntPtr.Zero;
+        }
+
+        if (msg is WmHotkey or WmFire && _actions.TryGetValue(wParam.ToInt32(), out var action))
         {
             try
             {
@@ -129,11 +223,51 @@ public sealed class HotkeyManager : IDisposable
 
     public void Dispose()
     {
+        _rehook.Dispose();
+        if (_hook != IntPtr.Zero)
+            UnhookWindowsHookEx(_hook);
+        _hook = IntPtr.Zero;
         UnregisterAll();
         DestroyWindow(_hwnd);
     }
 
     private delegate IntPtr WndProc(IntPtr hwnd, uint msg, IntPtr wParam, IntPtr lParam);
+
+    private delegate IntPtr HookProc(int code, IntPtr message, IntPtr data);
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct KeybdInput
+    {
+        public ushort Vk, Scan;
+        public uint Flags, Time;
+        public IntPtr ExtraInfo;
+    }
+
+    /// <summary>INPUT with the keyboard member; padded to the size of the largest member (MOUSEINPUT).</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 40)]
+    private struct Input
+    {
+        [FieldOffset(0)] public uint Type;
+        [FieldOffset(8)] public KeybdInput Key;
+    }
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr SetWindowsHookEx(int idHook, HookProc proc, IntPtr module, uint threadId);
+
+    [DllImport("user32.dll")]
+    private static extern bool UnhookWindowsHookEx(IntPtr hook);
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr CallNextHookEx(IntPtr hook, int code, IntPtr wParam, IntPtr lParam);
+
+    [DllImport("user32.dll")]
+    private static extern short GetAsyncKeyState(int vk);
+
+    [DllImport("user32.dll")]
+    private static extern bool PostMessage(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam);
+
+    [DllImport("user32.dll")]
+    private static extern uint SendInput(uint count, Input[] inputs, int size);
 
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
     private struct WndClassEx

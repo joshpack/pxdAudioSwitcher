@@ -162,6 +162,9 @@ internal static class SelfTest
                         $$"""{"tag_name":"v99.0.0","assets":[{"name":"{{zipName}}","browser_download_url":"{{prefix}}zip"},{"name":"{{zipName}}.sha256","browser_download_url":"{{prefix}}sum"}]}"""),
                     "/zip" => File.ReadAllBytes(zip),
                     "/sum" => Encoding.ASCII.GetBytes(hash + "  " + zipName),
+                    // A web filter's block page: 200 OK, but HTML instead of the release info or the zip.
+                    "/html/repos/" + Program.UpdateRepo + "/releases/latest" or "/htmlzip" => Encoding.UTF8.GetBytes(
+                        "<!DOCTYPE html><html><head><title>Blocked</title></head><body>This site is blocked by your network.</body></html>"),
                     _ => [],
                 };
                 ctx.Response.StatusCode = body.Length == 0 ? 404 : 200;
@@ -182,6 +185,26 @@ internal static class SelfTest
             pxdUpdate.CleanUp(app);
             Check(r, "update: files replaced in place", ok && File.ReadAllText(Path.Combine(app, exe)) == "new exe"
                 && File.ReadAllText(Path.Combine(app, "app.dll")) == "new dll" && !Directory.EnumerateFiles(app, "*.pxdold").Any());
+
+            // Block pages: never taken as release info, never installed.
+            Environment.SetEnvironmentVariable("PXD_UPDATE_API", prefix + "html");
+            Check(r, "update: a block page is never taken as release info",
+                Task.Run(() => pxdUpdate.FindUpdateAsync(Program.UpdateRepo, Program.UpdateAsset, new Version(0, 0, 1))).GetAwaiter().GetResult() is null);
+            var blocked = Path.Combine(root, "blocked");
+            Directory.CreateDirectory(blocked);
+            File.WriteAllText(Path.Combine(blocked, exe), "old exe");
+            var took = Task.Run(() => pxdUpdate.ApplyAsync(prefix + "htmlzip", null, blocked, Path.Combine(blocked, exe), [], start: false)).GetAwaiter().GetResult();
+            Check(r, "update: a block page is never installed (files untouched)", !took && File.ReadAllText(Path.Combine(blocked, exe)) == "old exe"
+                && !Directory.EnumerateFiles(blocked, "*.pxdold").Any());
+
+            // Where updates come from (nothing is fetched here): pxdtek.com first, GitHub when that fails.
+            Environment.SetEnvironmentVariable("PXD_UPDATE_API", null);
+            Check(r, "update: release info from pxdtek.com first, then GitHub", pxdUpdate.ApiBases() is ["https://pxdtek.com/gh", "https://api.github.com"]);
+            var repo = Program.UpdateRepo.Split('/')[1];
+            Check(r, "update: a failed pxdtek.com download falls back to the GitHub copy",
+                pxdUpdate.GitHubCopy($"https://pxdtek.com/dl/{repo}/v9.9.9/{repo}-9.9.9-win-x64.zip")
+                    == $"https://github.com/{Program.UpdateRepo}/releases/download/v9.9.9/{repo}-9.9.9-win-x64.zip"
+                && pxdUpdate.GitHubCopy("https://example.com/x.zip") is null);
         }
         finally
         {

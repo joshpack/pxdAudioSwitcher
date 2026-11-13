@@ -17,12 +17,14 @@
 - **Banner where you want it.** Click one of nine spots on a little monitor in Settings (corners, edge middles or the center) and a preview shows there. It can follow the screen your mouse is on or stay on the main screen.
 - **Start minimized** to the tray, also when you open the app yourself.
 - **Apps with their own device come along.** An app given its own output in Windows' Volume mixer (*Settings → System → Sound → Volume mixer*) ignores the default device, so switching normally leaves it behind. pxd Audio Switcher clears that app's own device when you switch, so it follows; turn this off in Settings to keep such apps where they are. *Reset all apps* clears every app's own device at once, including games that aren't running.
+- **Hotkeys work inside games.** Many games tell Windows to ignore ordinary hotkeys while they're in front; pxd Audio Switcher still catches its own combinations there, and the game doesn't see them.
+- **Games that don't follow.** Some games (World of Warcraft, for one) pick a sound device when they start and ignore every switch after that, even on *System Default*, and Windows can't move them either. Add such a game in Settings with a key; after a playback switch made while that game is in front, pxd Audio Switcher presses the key there once. Bind that key in the game to restart its sound. For WoW, make a macro with `/console Sound_RestartSoundSystem` and bind it to a key you don't use.
 - **Communications device** can switch along with the default one, or stay put so calls keep using the same headset.
 - **Command line** for desktop shortcuts, Stream Deck buttons and scripts. Works whether the app is running or not.
 - **Hotkey clash warning** when another program already owns a combination.
 - **Light.** The settings window only exists while it is open; nothing polls in the background.
 - **Start when I sign in**, optional.
-- **Works with [pxd Toolkit](https://github.com/joshpack/pxdToolkit).** Turn the tray icon on or off there (or with *Show tray icon* in Settings); with it hidden the hotkeys keep working and starting the app again opens the window. The window remembers its size and position.
+- **Works with [pxd Toolkit](https://github.com/pxdtek/pxdToolkit).** Turn the tray icon on or off there (or with *Show tray icon* in Settings); with it hidden the hotkeys keep working and starting the app again opens the window. The window remembers its size and position.
 
 | Profiles | Settings |
 | --- | --- |
@@ -39,7 +41,8 @@ The banner after a switch, a profile and a mute:
 - **Devices.** The Windows Core Audio API (`IMMDeviceEnumerator`) lists playback and recording devices and reports when one is plugged in, removed or changed.
 - **Switching.** The default device is set through `IPolicyConfig`, the interface Windows' own Sound control panel uses. It isn't officially documented, so a future Windows update could change it. Each switch sets the *Console* and *Multimedia* roles, and *Communications* too unless you turn that off.
 - **Apps with their own device.** The Volume mixer's per-app devices are read and cleared through Windows' internal `AudioPolicyConfig` factory (Windows 10 21H2 and later), the same one the mixer page uses. It isn't documented either. Only running apps that actually have their own device are touched, and the scan takes a few milliseconds.
-- **Hotkeys** are registered with `RegisterHotKey` on a hidden message-only window: no keyboard hook, nothing reads your typing.
+- **Hotkeys** are registered with `RegisterHotKey` on a hidden message-only window. Because many games switch those off while they're in front (raw keyboard input with `RIDEV_NOHOTKEYS`), a low-level keyboard hook also watches for the same combinations. It only compares each key press with your hotkeys, keeps nothing and logs nothing, lets every other key straight through, and ignores key presses made by programs.
+- **Games that don't follow** get one key press through `SendInput`, only right after a playback switch you made, only while that game is the window in front, and only once you've let go of your hotkey.
 - **Programs.** Profiles that follow programs use an out-of-context WinEvent hook for "foreground window changed", so nothing is injected into other programs and nothing polls. The watcher only runs while some profile has programs listed.
 - **Command line.** A second copy started with options hands them to the running copy over a named pipe and exits. If no copy is running, it does the job itself and exits.
 
@@ -57,13 +60,13 @@ It was written from scratch and shares no code with other audio switchers.
 ## Install (Windows)
 
 1. Install the **[.NET 10 Runtime](https://dotnet.microsoft.com/download/dotnet/10.0)** (x64) if you don't have it. The plain ".NET Runtime" is enough; the ".NET Desktop Runtime" includes it, so that works too.
-2. Download **`pxdAudioSwitcher-1.4.1-win-x64.zip`** from **[the latest release](https://github.com/joshpack/pxdAudioSwitcher/releases/latest)** (and `pxdAudioSwitcher-1.4.1-win-x64.zip.sha256` if you want to check it: `Get-FileHash pxdAudioSwitcher-1.4.1-win-x64.zip` in PowerShell).
+2. Download **`pxdAudioSwitcher-1.4.2-win-x64.zip`** from **[the latest release](https://github.com/pxdtek/pxdAudioSwitcher/releases/latest)** (and `pxdAudioSwitcher-1.4.2-win-x64.zip.sha256` if you want to check it: `Get-FileHash pxdAudioSwitcher-1.4.2-win-x64.zip` in PowerShell).
 3. Unzip it somewhere permanent, for example into `%USERPROFILE%\Apps` (the zip holds a `pxdAudioSwitcher` folder).
 4. Run `pxdAudioSwitcher.exe`. It doesn't need administrator rights.
 
 The exe isn't code-signed, so SmartScreen may warn the first time: choose **More info → Run anyway**.
 
-**Updates:** each time the app starts it checks for a newer release (4 seconds at most, skipped when offline) and, if there is one, updates its own folder and starts again. Command-line actions such as `--next-playback` never wait for this. Set `PXD_NO_UPDATE=1` to turn it off.
+**Updates:** each time the app starts it checks pxdtek.com for a newer release (GitHub when pxdtek.com can't be reached; 4 seconds at most, skipped when offline) and, if there is one, updates its own folder and starts again. Command-line actions such as `--next-playback` never wait for this. Set `PXD_NO_UPDATE=1` to turn it off.
 
 ## First run
 
@@ -113,7 +116,7 @@ Options can be combined. When the app is already running they are passed to it; 
 
 ## Settings file
 
-Everything is saved as JSON in `%APPDATA%\pxdAudioSwitcher\settings.json`: the hotkeys, which devices are in each cycle (`PlaybackCycle`, `RecordingCycle`; empty means all), `MoveAppsWithOwnDevice`, `SetCommunications`, `Notify` (`Banner`, `BannerAndSound`, `Sound` or `Off`), `BannerSpot` (0 to 8, left to right and top to bottom; 8 is bottom right), `BannerFollowsMouse`, `StartInTray`, the profiles, and the last-known name of every device (so a profile can still name a device that is unplugged). Delete the file to go back to the defaults.
+Everything is saved as JSON in `%APPDATA%\pxdAudioSwitcher\settings.json`: the hotkeys, which devices are in each cycle (`PlaybackCycle`, `RecordingCycle`; empty means all), `MoveAppsWithOwnDevice`, `SetCommunications`, `Notify` (`Banner`, `BannerAndSound`, `Sound` or `Off`), `BannerSpot` (0 to 8, left to right and top to bottom; 8 is bottom right), `BannerFollowsMouse`, `StartInTray`, the profiles, `GameNudges` (games that don't follow, with their key), and the last-known name of every device (so a profile can still name a device that is unplugged). Delete the file to go back to the defaults.
 
 The window's size, position and maximized state are kept next to it in `windows.json`. Whether the tray icon shows is kept in `%APPDATA%\pxd\toolkit.json` (`apps.pxdAudioSwitcher.trayIcon`), the file pxd Toolkit shares with every pxd app; the app watches it, so a change there shows or hides the icon at once.
 
@@ -140,7 +143,7 @@ It first checks that a settings folder under the app's earlier name is moved onc
 Windows with the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0):
 
 ```bash
-git clone https://github.com/joshpack/pxdAudioSwitcher.git
+git clone https://github.com/pxdtek/pxdAudioSwitcher.git
 cd pxdAudioSwitcher
 dotnet run
 dotnet publish -c Release -r win-x64 --self-contained false -p:DebugType=none -o publish/win-x64
@@ -157,7 +160,8 @@ The version comes from `<Version>` in `pxdAudioSwitcher.csproj`. For a copy that
 | `Audio/CoreAudio.cs` | Core Audio and `IPolicyConfig` COM interop |
 | `Audio/AppRouting.cs` | Apps given their own device in the Volume mixer |
 | `Audio/AudioDevices.cs` | Listing devices, reading and setting defaults, microphone mute, change notifications |
-| `Platform/Hotkeys.cs` | Global hotkeys on a message-only window |
+| `Platform/Hotkeys.cs` | Global hotkeys on a message-only window, plus the keyboard hook that catches them inside games |
+| `Platform/KeySender.cs` | The one key press for games that don't follow |
 | `Platform/ForegroundWatcher.cs` | Which program's window is in front |
 | `Platform/MemoryTrim.cs` | Hands unused memory back to Windows after the window closes |
 | `Services/Switcher.cs` | Cycling, profiles, mute, following programs and switching back |

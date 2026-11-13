@@ -23,6 +23,19 @@ public sealed class Profile
     public bool RestoreOnClose { get; set; } = true;
 }
 
+/// <summary>
+/// A game that picks its sound device once and ignores every later change (World of Warcraft does). After a playback
+/// switch made while it is the window in front, the app presses <see cref="Key"/> in it; the user binds that key in
+/// the game to its own "restart sound" command, so the game reopens its sound on the new default.
+/// </summary>
+public sealed class GameNudge
+{
+    /// <summary>Exe name, e.g. "wow.exe".</summary>
+    public string Exe { get; set; } = "";
+
+    public Hotkey? Key { get; set; }
+}
+
 /// <summary>Everything the user can change, saved as JSON in the per-user app-data folder.</summary>
 public sealed class AppSettings
 {
@@ -57,6 +70,9 @@ public sealed class AppSettings
     public bool StartInTray { get; set; }
 
     public List<Profile> Profiles { get; set; } = new();
+
+    /// <summary>Games that only follow a switch when told to restart their sound with a key press.</summary>
+    public List<GameNudge> GameNudges { get; set; } = new();
 
     /// <summary>Last known name of every device seen, so unplugged devices in a profile still have a name.</summary>
     public Dictionary<string, string> KnownNames { get; set; } = new();

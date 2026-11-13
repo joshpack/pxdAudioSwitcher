@@ -16,6 +16,9 @@ public sealed class HotkeyButton : Button
 
     public Hotkey? Value { get; private set; }
 
+    /// <summary>Accept any single key without a modifier (for a key pressed in a game, not a system-wide hotkey).</summary>
+    public bool AllowPlainKeys { get; init; }
+
     public event Action<Hotkey?>? ValueChanged;
     public event Action? CaptureStarted, CaptureEnded;
 
@@ -70,7 +73,7 @@ public sealed class HotkeyButton : Button
             return;   // a modifier on its own, or a key that can't be a hotkey: keep listening
 
         var mods = Hotkey.ModsFrom(e.KeyModifiers);
-        if (mods == 0 && !Hotkey.StandsAlone(vk))
+        if (mods == 0 && !Hotkey.StandsAlone(vk) && !AllowPlainKeys)
         {
             Content = "Add Ctrl, Alt, Shift or Win";
             return;

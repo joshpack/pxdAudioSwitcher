@@ -144,7 +144,22 @@ public sealed class Switcher : IDisposable
             return false;
         if (Settings.MoveAppsWithOwnDevice)
             moved = Math.Max(0, AppRouting.ReleaseRunningApps(flow));
+        if (flow == EDataFlow.Render)
+            NudgeGame();
         return true;
+    }
+
+    /// <summary>
+    /// If the window in front is a game on the "doesn't follow" list, press its restart-sound key there so it moves to
+    /// the new default too. Games in the background are left alone: a key press would land in the wrong window.
+    /// </summary>
+    private void NudgeGame()
+    {
+        if (Settings.GameNudges.Count == 0 || KeySender.ForegroundExe() is not { } exe)
+            return;
+        var nudge = Settings.GameNudges.FirstOrDefault(g => g.Key is not null && g.Exe.Equals(exe, StringComparison.OrdinalIgnoreCase));
+        if (nudge?.Key is { } key)
+            KeySender.PressInGame(key, exe);
     }
 
     private static string MovedNote(int moved) => moved switch

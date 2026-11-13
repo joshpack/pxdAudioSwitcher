@@ -12,7 +12,7 @@ internal static class Program
     private static Mutex? _instance;
 
     /// <summary>Where updates come from: the release zip the Toolkit installs.</summary>
-    public const string UpdateRepo = "joshpack/pxdAudioSwitcher";
+    public const string UpdateRepo = "pxdtek/pxdAudioSwitcher";
     public const string UpdateAsset = @"^pxdAudioSwitcher-.*-win-x64\.zip$";
 
     /// <summary>Started by Windows at sign-in: stay in the tray instead of opening the window.</summary>

@@ -165,6 +165,18 @@
             </Border>
 
             <Border Classes="card" Padding="16">
+              <StackPanel Spacing="10">
+                <TextBlock Text="GAMES THAT DON'T FOLLOW" Classes="label" />
+                <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
+                           Text="Some games pick a sound device when they start and ignore every switch after that, even on System Default. For those, this app presses a key in the game right after you switch playback while it's in front; bind that key in the game to restart its sound." />
+                <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
+                           Text="World of Warcraft: make a macro with  /console Sound_RestartSoundSystem  and bind it to a key you don't use (e.g. Ctrl+F12), then enter the same key here." />
+                <StackPanel x:Name="GameList" Spacing="6" />
+                <ComboBox x:Name="GamePick" PlaceholderText="Add a running game…" HorizontalAlignment="Stretch" MinHeight="34" />
+              </StackPanel>
+            </Border>
+
+            <Border Classes="card" Padding="16">
               <StackPanel Spacing="8">
                 <TextBlock Text="COMMAND LINE" Classes="label" />
                 <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
